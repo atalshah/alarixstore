@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Alarix | Markaz Style Marketplace</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root { --primary: #00b894; --primary-dark: #008f72; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fff; color: #1e293b; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        
+        .markaz-bg { background-color: var(--primary); }
+        .markaz-green { color: var(--primary); }
+        
+        /* App Overlays */
+        .app-overlay { position: fixed; inset: 0; background: white; z-index: 600; display: none; flex-direction: column; }
+        .app-overlay.active { display: flex; animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        /* Carousel / Slider */
+        .img-slider { display: flex; overflow-x: auto; snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        .img-slider::-webkit-scrollbar { display: none; }
+        .slide-item { flex: 0 0 100%; snap-align: center; display: flex; justify-content: center; align-items: center; background: #fff; }
+
+        /* Modern Inputs */
+        .input-field { 
+            width: 100%; padding: 14px 16px; border-radius: 14px; 
+            border: 1.5px solid #e2e8f0; background: #fff;
+            outline: none; transition: 0.2s; font-size: 14px; font-weight: 500;
+        }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.08); }
+
+        /* Navigation */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; align-items: center; z-index: 500; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-link { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #94a3b8; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .nav-link.active { color: var(--primary); }
+
+        /* Sidebar */
+        .cat-sidebar { width: 95px; background: #f8fafc; height: calc(100vh - 145px); overflow-y: auto; border-right: 1px solid #f1f5f9; }
+        .cat-btn { padding: 18px 8px; font-size: 10px; font-weight: 800; text-align: center; color: #64748b; border-left: 3px solid transparent; cursor: pointer; }
+        .cat-btn.active { background: white; color: var(--primary); border-left-color: var(--primary); }
+
+        .btn-primary { background: var(--primary); color: white; padding: 16px; border-radius: 16px; font-weight: 800; width: 100%; text-align: center; display: flex; items-center; justify-content: center; gap: 8px; }
+        
+        #splash { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash">
+        <div class="w-20 h-20 markaz-bg rounded-[28px] flex items-center justify-center text-white text-4xl font-black shadow-xl animate-bounce">A</div>
+        <h1 class="mt-4 text-2xl font-black tracking-tighter">ALARIX</h1>
+        <p class="text-slate-400 text-[10px] font-bold tracking-[0.3em] uppercase mt-1">Pakistan's #1 Reselling App</p>
+    </div>
+
+    <!-- HEADER -->
+    <header class="fixed top-0 w-full bg-white z-[400] px-5 h-16 flex items-center justify-between border-b">
+        <div class="flex items-center gap-2" onclick="switchView('home')">
+            <div class="markaz-green"><i data-lucide="zap" class="fill-current w-6 h-6"></i></div>
+            <h1 class="text-xl font-black">ALARIX</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div onclick="switchView('favs')" class="relative"><i data-lucide="heart" class="w-6 h-6 text-slate-400"></i></div>
+            <div onclick="switchView('cart')" class="relative"><i data-lucide="shopping-bag" class="w-6 h-6 text-slate-400"></i><span id="cart-badge" class="absolute -top-1.5 -right-1.5 markaz-bg text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span></div>
+        </div>
+    </header>
+
+    <!-- MAIN APP VIEWS -->
+    <main class="mt-16 pb-24">
+        <!-- Home View -->
+        <section id="view-home" class="px-4 pt-4">
+            <div class="relative mb-5">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                <input type="text" placeholder="Search catalogs (e.g. Zara, Gul Ahmed)" class="input-field pl-11 bg-slate-100 border-none" oninput="app.search(this.value)">
+            </div>
+            <div id="grid-home" class="grid grid-cols-2 gap-3"></div>
+        </section>
+
+        <!-- Category View -->
+        <section id="view-category" class="hidden-view flex h-[calc(100vh-140px)]">
+            <div class="cat-sidebar no-scrollbar" id="list-cats"></div>
+            <div class="flex-1 p-4 overflow-y-auto no-scrollbar" id="grid-cats"></div>
+        </section>
+
+        <!-- Profile View -->
+        <section id="view-profile" class="hidden-view p-6">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-16 h-16 markaz-bg rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-emerald-100">👤</div>
+                <div><h2 id="u-name" class="text-lg font-black text-slate-800">Reseller</h2><p id="u-city" class="text-xs font-bold text-slate-400 uppercase"></p></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <div class="bg-emerald-50 p-5 rounded-3xl border border-emerald-100">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">Total Profit</p>
+                    <h3 id="stat-profit" class="text-xl font-black text-emerald-900">Rs. 0</h3>
+                </div>
+                <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-600 uppercase mb-1">Orders Done</p>
+                    <h3 id="stat-orders" class="text-xl font-black text-blue-900">0</h3>
+                </div>
+            </div>
+
+            <div id="seller-hub" class="space-y-3"></div>
+            <div class="mt-6">
+                <button onclick="switchView('orders')" class="w-full flex justify-between p-5 bg-slate-50 rounded-2xl font-bold text-sm mb-3"><span>My Orders</span><i data-lucide="chevron-right"></i></button>
+            </div>
+        </section>
+
+        <section id="view-cart" class="hidden-view p-5"><h2 class="text-xl font-black mb-5">Bag</h2><div id="list-cart" class="space-y-4"></div></section>
+        <section id="view-orders" class="hidden-view p-5"><div class="flex items-center gap-3 mb-5"><i data-lucide="arrow-left" onclick="switchView('profile')"></i><h2 class="text-xl font-black">My Orders</h2></div><div id="list-orders" class="space-y-4"></div></section>
+        <section id="view-favs" class="hidden-view p-5"><h2 class="text-xl font-black mb-5">Favorites</h2><div id="grid-favs" class="grid grid-cols-2 gap-3"></div></section>
+        
+        <!-- Post View (Multiple Images) -->
+        <section id="view-post" class="hidden-view p-6">
+            <div class="flex items-center gap-3 mb-6"><i data-lucide="arrow-left" onclick="switchView('profile')"></i><h2 class="text-xl font-black">New Catalog</h2></div>
+            <div class="space-y-4 pb-10">
+                <input type="text" id="post-name" class="input-field" placeholder="Catalog Name">
+                <input type="number" id="post-price" class="input-field" placeholder="Wholesale Price">
+                <select id="post-cat" class="input-field">
+                    <!-- Standard Markaz Categories -->
+                    <option>Ladies Stitched</option><option>Ladies Unstitched</option>
+                    <option>Mens Stitched</option><option>Mens Unstitched</option>
+                    <option>Bedding</option><option>Jewellery</option>
+                    <option>Kitchenware</option><option>Bags & Footwear</option>
+                    <option>Electronics</option><option>Toys & Kids</option>
+                </select>
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Product Images (Paste ImgBB Direct Links)</p>
+                    <input type="url" id="img-1" class="input-field" placeholder="Image 1 (Main)">
+                    <input type="url" id="img-2" class="input-field" placeholder="Image 2">
+                    <input type="url" id="img-3" class="input-field" placeholder="Image 3">
+                    <input type="url" id="img-4" class="input-field" placeholder="Image 4">
+                    <input type="url" id="img-5" class="input-field" placeholder="Image 5">
+                </div>
+                <textarea id="post-desc" class="input-field" placeholder="Complete Description (Size, Fabric, Details)..." rows="4"></textarea>
+                <button onclick="app.publish()" class="btn-primary mt-4 shadow-xl shadow-emerald-100">Publish Catalog</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- PRODUCT DETAIL OVERLAY (SWIPEABLE SLIDER) -->
+    <div id="overlay-detail" class="app-overlay">
+        <header class="h-16 flex items-center justify-between px-5 border-b sticky top-0 bg-white z-10">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <div class="flex gap-6">
+                <i data-lucide="download" class="w-6 h-6 text-slate-400" onclick="app.copyDetails()"></i>
+                <i data-lucide="heart" id="det-fav-icon" onclick="app.toggleFav()"></i>
+                <i data-lucide="share-2" onclick="app.share()"></i>
+            </div>
+        </header>
+        <div class="overflow-y-auto flex-1 pb-32">
+            <!-- Swipeable Slider -->
+            <div class="relative bg-white group">
+                <div id="det-slider" class="img-slider h-[400px]">
+                    <!-- Slides will be injected here -->
+                </div>
+                <div id="slider-dots" class="absolute bottom-4 left-0 w-full flex justify-center gap-2"></div>
+            </div>
+
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h2 id="det-price" class="text-3xl font-black markaz-green"></h2>
+                    <div class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">In Stock</div>
+                </div>
+                <h1 id="det-name" class="text-lg font-bold text-slate-700 mb-6 leading-tight"></h1>
+                
+                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex justify-between items-center mb-8">
+                    <div><p class="text-[10px] font-black text-orange-600 uppercase">Delivery Fee</p><p class="text-sm font-bold text-orange-900">Standard Rs. 125</p></div>
+                    <i data-lucide="truck" class="w-8 h-8 text-orange-200"></i>
+                </div>
+
+                <div class="flex items-center justify-between mb-8">
+                    <span class="font-bold text-slate-500">Order Quantity</span>
+                    <div class="flex items-center gap-5 bg-slate-100 rounded-2xl p-1.5">
+                        <button onclick="app.updateQty(-1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold text-xl">-</button>
+                        <span id="det-qty" class="font-black text-lg">1</span>
+                        <button onclick="app.updateQty(1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold text-xl">+</button>
+                    </div>
+                </div>
+
+                <h3 class="font-black text-xs uppercase text-slate-400 mb-3 tracking-widest">Catalog Details</h3>
+                <p id="det-desc" class="text-sm text-slate-500 leading-relaxed whitespace-pre-line"></p>
+            </div>
+        </div>
+        <div class="fixed bottom-0 w-full p-4 bg-white border-t flex gap-3 h-24 items-center">
+            <button onclick="app.addToCart()" class="flex-1 border-2 border-emerald-500 markaz-green font-bold py-4 rounded-2xl">Add to Bag</button>
+            <button onclick="app.openOrderStep1()" class="flex-1 markaz-bg text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200">Order Now</button>
+        </div>
+    </div>
+
+    <!-- ORDER FLOW (MARKAZ STYLE) -->
+    <div id="overlay-order" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white sticky top-0">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">Checkout</h2>
+        </header>
+        <div class="p-6 overflow-y-auto flex-1">
+            <div id="ord-step-1">
+                <div class="bg-slate-50 p-6 rounded-[32px] mb-8 border">
+                    <div class="flex justify-between mb-3 text-sm font-bold"><span class="text-slate-400">Wholesale (x<span id="summ-qty">1</span>)</span><span id="summ-wholesale"></span></div>
+                    <div class="flex justify-between mb-5 text-sm font-bold"><span class="text-slate-400">Delivery Charges</span><span>Rs. 125</span></div>
+                    <div class="border-t border-dashed border-slate-300 pt-6">
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-3">Your Profit (Per Piece)</label>
+                        <input type="number" id="input-profit" class="input-field text-xl font-black placeholder:font-normal" placeholder="0" oninput="app.calcTotal()">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-10 px-2">
+                    <span class="font-bold text-slate-500">Customer Total Price</span>
+                    <span id="summ-total" class="text-3xl font-black markaz-green">Rs. 0</span>
+                </div>
+                <button onclick="app.openOrderStep2()" class="btn-primary">Enter Customer Address</button>
+            </div>
+
+            <div id="ord-step-2" class="hidden-view space-y-4 pb-10">
+                <input type="text" id="c-name" class="input-field" placeholder="Full Customer Name">
+                <input type="tel" id="c-phone" class="input-field" placeholder="Customer Mobile Number">
+                <input type="text" id="c-biz" class="input-field" placeholder="Your Business Name (On Label)">
+                <input type="text" id="c-city" class="input-field" placeholder="City">
+                <textarea id="c-address" class="input-field" placeholder="Complete Address (House, Street, Landmark...)" rows="3"></textarea>
+                <button onclick="app.placeOrder()" class="btn-primary shadow-xl mt-4">Confirm Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <div onclick="switchView('home')" class="nav-link active" id="nav-home"><i data-lucide="home"></i><span>Home</span></div>
+        <div onclick="switchView('category')" class="nav-link" id="nav-category"><i data-lucide="layout-grid"></i><span>Categories</span></div>
+        <div onclick="switchView('profile')" class="nav-link" id="nav-profile"><i data-lucide="user"></i><span>Profile</span></div>
+    </nav>
+
+    <!-- AUTH -->
+    <div id="auth-screen" class="fixed inset-0 z-[1500] bg-white hidden p-10 flex flex-col justify-center">
+        <h2 class="text-4xl font-black mb-2 tracking-tighter">Reseller Sign In</h2>
+        <p class="text-slate-400 mb-10 font-medium">Create your business ID to start reselling.</p>
+        <div class="space-y-4">
+            <input type="text" id="reg-name" class="input-field" placeholder="Your Name">
+            <input type="tel" id="reg-wa" class="input-field" placeholder="WhatsApp Number">
+            <input type="text" id="reg-city" class="input-field" placeholder="City">
+            <button onclick="app.register()" class="btn-primary mt-4">Start My Business</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3D_1IRdpPB_2rmF5rtGqvJ1EXFNF2zxc",
+            authDomain: "alarix-61e90.firebaseapp.com",
+            databaseURL: "https://alarix-61e90-default-rtdb.firebaseio.com",
+            projectId: "alarix-61e90",
+            storageBucket: "alarix-61e90.firebasestorage.app",
+            messagingSenderId: "747193234958",
+            appId: "1:747193234958:web:c69501009d5950b63d6e5f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const uid = localStorage.getItem('al_uid') || 'U'+Date.now();
+        localStorage.setItem('al_uid', uid);
+
+        const app = {
+            prods: [], cart: [], favs: [], store: null, user: null, sel: null, qty: 1, shipping: 125,
+            cats: ['All', 'Ladies Stitched', 'Ladies Unstitched', 'Mens Stitched', 'Mens Unstitched', 'Bedding', 'Jewellery', 'Kitchenware', 'Bags & Footwear', 'Electronics', 'Toys & Kids'],
+
+            init() {
+                setTimeout(()=>document.getElementById('splash').style.display='none', 2500);
+                this.user = JSON.parse(localStorage.getItem('al_user'));
+                if(!this.user) document.getElementById('auth-screen').classList.remove('hidden');
+                else this.sync();
+                window.onpopstate = () => this.closeOverlays(true);
+            },
+
+            register() {
+                const n = document.getElementById('reg-name').value, w = document.getElementById('reg-wa').value, c = document.getElementById('reg-city').value;
+                if(!n || !w || !c) return alert("Fill all info");
+                const u = { name: n, wa: w, city: c, uid: uid };
+                localStorage.setItem('al_user', JSON.stringify(u));
+                db.ref(`users/${uid}/profile`).set(u).then(()=>location.reload());
+            },
+
+            sync() {
+                db.ref('products').on('value', s => {
+                    this.prods = s.val() ? Object.entries(s.val()).map(([id,v])=>({id,...v})) : [];
+                    this.renderHome();
+                    this.renderCats();
+                    const pid = new URLSearchParams(window.location.search).get('pid');
+                    if(pid) this.openDetail(pid);
+                });
+                db.ref(`users/${uid}`).on('value', s => {
+                    const d = s.val() || {};
+                    this.cart = d.cart ? Object.entries(d.cart).map(([k,v])=>({cartId:k,...v})) : [];
+                    this.favs = d.favs ? Object.values(d.favs) : [];
+                    this.store = d.store || null;
+                    this.updateUI();
+                });
+                db.ref('orders').on('value', s => {
+                    const all = s.val() ? Object.values(s.val()) : [];
+                    const my = all.filter(o => o.buyerId === uid);
+                    this.renderOrders(my);
+                    this.calcStats(my);
+                });
+            },
+
+            renderHome(list = this.prods) {
+                const g = document.getElementById('grid-home');
+                g.innerHTML = list.map(p => `
+                    <div class="bg-white border border-slate-100 rounded-[24px] overflow-hidden" onclick="app.openDetail('${p.id}')">
+                        <div class="h-44 bg-slate-50 flex items-center justify-center p-3">
+                            <img src="${p.images ? p.images[0] : ''}" class="max-h-full object-contain">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-xs font-bold truncate text-slate-700">${p.name}</h3>
+                            <p class="text-sm font-black markaz-green mt-1">Rs. ${p.price}</p>
+                            <p class="text-[9px] font-bold text-slate-400 mt-2 uppercase">Catalog ID: ${p.id.substr(-6)}</p>
+                        </div>
+                    </div>`).join('');
+                lucide.createIcons();
+            },
+
+            openDetail(id) {
+                this.sel = this.prods.find(p => p.id === id);
+                if(!this.sel) return;
+                this.qty = 1;
+                
+                // Render Slider
+                const slider = document.getElementById('det-slider');
+                const dots = document.getElementById('slider-dots');
+                const images = this.sel.images || [this.sel.image];
+                
+                slider.innerHTML = images.filter(i => i).map(img => `
+                    <div class="slide-item"><img src="${img}" class="h-full w-full object-contain"></div>
+                `).join('');
+                
+                dots.innerHTML = images.filter(i => i).map((_, i) => `
+                    <div class="w-1.5 h-1.5 rounded-full ${i===0?'markaz-bg w-4':'bg-slate-200'}"></div>
+                `).join('');
+
+                document.getElementById('det-name').innerText = this.sel.name;
+                document.getElementById('det-price').innerText = 'Rs. ' + this.sel.price;
+                document.getElementById('det-desc').innerText = this.sel.desc;
+                document.getElementById('det-qty').innerText = this.qty;
+                
+                const isFav = this.favs.some(f => f.id === id);
+                document.getElementById('det-fav-icon').style.fill = isFav ? '#ef4444' : 'none';
+                document.getElementById('det-fav-icon').style.color = isFav ? '#ef4444' : '#94a3b8';
+
+                document.getElementById('overlay-detail').classList.add('active');
+                history.pushState({overlay: true}, "");
+                lucide.createIcons();
+            },
+
+            updateQty(v) {
+                this.qty = Math.max(1, this.qty + v);
+                document.getElementById('det-qty').innerText = this.qty;
+            },
+
+            copyDetails() {
+                const text = `Catalog Name: ${this.sel.name}\nWholesale: Rs. ${this.sel.price}\n\nDetails:\n${this.sel.desc}`;
+                navigator.clipboard.writeText(text).then(()=>alert("Catalog Details Copied!"));
+            },
+
+            closeOverlays(pop=false) {
+                document.querySelectorAll('.app-overlay').forEach(o => o.classList.remove('active'));
+                if(!pop && window.history.state?.overlay) history.back();
+            },
+
+            openOrderStep1() {
+                document.getElementById('summ-wholesale').innerText = 'Rs. ' + (this.sel.price * this.qty);
+                document.getElementById('summ-qty').innerText = this.qty;
+                document.getElementById('input-profit').value = '';
+                this.calcTotal();
+                document.getElementById('ord-step-1').classList.remove('hidden-view');
+                document.getElementById('ord-step-2').classList.add('hidden-view');
+                document.getElementById('overlay-order').classList.add('active');
+                history.pushState({overlay: true}, "");
+            },
+
+            calcTotal() {
+                const profitPerUnit = parseInt(document.getElementById('input-profit').value) || 0;
+                const total = (parseInt(this.sel.price) * this.qty) + this.shipping + (profitPerUnit * this.qty);
+                document.getElementById('summ-total').innerText = 'Rs. ' + total;
+            },
+
+            openOrderStep2() {
+                if(!document.getElementById('input-profit').value) return alert("Enter profit");
+                document.getElementById('ord-step-1').classList.add('hidden-view');
+                document.getElementById('ord-step-2').classList.remove('hidden-view');
+            },
+
+            placeOrder() {
+                const n = document.getElementById('c-name').value, ph = document.getElementById('c-phone').value, ad = document.getElementById('c-address').value;
+                if(!n || !ph || !ad) return alert("Fill customer info");
+                const profUnit = parseInt(document.getElementById('input-profit').value) || 0;
+                const order = {
+                    buyerId: uid, productName: this.sel.name, qty: this.qty,
+                    wholesale: this.sel.price, profit: (profUnit * this.qty),
+                    total: (parseInt(this.sel.price) * this.qty) + this.shipping + (profUnit * this.qty),
+                    customerName: n, customerPhone: ph, businessName: document.getElementById('c-biz').value,
+                    address: ad, status: 'Pending', timestamp: Date.now()
+                };
+                db.ref('orders').push(order).then(() => {
+                    alert("Order Placed Successfully!");
+                    this.closeOverlays();
+                    switchView('orders');
+                });
+            },
+
+            addToCart() { db.ref(`users/${uid}/cart`).push(this.sel).then(()=>alert("Added to Bag")); },
+            toggleFav() {
+                const exists = this.favs.find(f => f.id === this.sel.id);
+                if(exists) db.ref(`users/${uid}/favs`).orderByChild('id').equalTo(this.sel.id).once('value', s => s.forEach(c => c.ref.remove()));
+                else db.ref(`users/${uid}/favs`).push(this.sel);
+            },
+
+            publish() {
+                const n = document.getElementById('post-name').value, p = document.getElementById('post-price').value, c = document.getElementById('post-cat').value, d = document.getElementById('post-desc').value;
+                const imgs = [
+                    document.getElementById('img-1').value,
+                    document.getElementById('img-2').value,
+                    document.getElementById('img-3').value,
+                    document.getElementById('img-4').value,
+                    document.getElementById('img-5').value
+                ].filter(i => i);
+
+                if(!n || !p || imgs.length === 0) return alert("Name, Price and at least 1 image required");
+                const ref = db.ref('products').push();
+                ref.set({ id: ref.key, name: n, price: p, category: c, images: imgs, desc: d, sellerId: uid, sellerName: this.store.name, timestamp: Date.now() })
+                .then(() => { alert("Catalog Live!"); switchView('home'); });
+            },
+
+            updateUI() {
+                document.getElementById('u-name').innerText = this.user.name;
+                document.getElementById('u-city').innerText = this.user.city;
+                document.getElementById('cart-badge').innerText = this.cart.length;
+                
+                const hub = document.getElementById('seller-hub');
+                if(this.store) {
+                    hub.innerHTML = `
+                    <div class="bg-slate-900 text-white p-7 rounded-[32px] shadow-2xl shadow-slate-200">
+                        <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">My Business</p>
+                        <h3 class="text-2xl font-black mb-6">${this.store.name}</h3>
+                        <div class="flex gap-2">
+                           <button onclick="switchView('post')" class="flex-1 bg-white text-black py-4 rounded-2xl font-bold text-xs">Add New Catalog</button>
+                           <button class="bg-slate-800 p-4 rounded-2xl"><i data-lucide="settings" class="w-4 h-4 text-white"></i></button>
+                        </div>
+                    </div>`;
+                } else {
+                    hub.innerHTML = `<button onclick="app.createStore()" class="btn-primary">Become a Reseller</button>`;
+                }
+
+                document.getElementById('list-cart').innerHTML = this.cart.map(i => `
+                    <div class="flex gap-4 bg-slate-50 p-4 rounded-2xl items-center border">
+                        <img src="${i.images ? i.images[0] : ''}" class="w-16 h-16 object-contain rounded-xl bg-white">
+                        <div class="flex-1"><h4 class="text-xs font-bold truncate text-slate-700">${i.name}</h4><p class="text-sm font-black markaz-green">Rs. ${i.price}</p></div>
+                        <i data-lucide="trash-2" class="w-5 h-5 text-red-400" onclick="app.delCart('${i.cartId}')"></i>
+                    </div>`).join('');
+                
+                document.getElementById('grid-favs').innerHTML = this.favs.map(p => `
+                    <div class="bg-white border rounded-[24px] overflow-hidden" onclick="app.openDetail('${p.id}')">
+                        <img src="${p.images ? p.images[0] : ''}" class="h-32 w-full object-contain p-2">
+                        <div class="p-2"><h3 class="text-[10px] font-bold truncate">${p.name}</h3></div>
+                    </div>`).join('');
+                lucide.createIcons();
+            },
+
+            createStore() {
+                const s = prompt("Enter Business/Shop Name:");
+                if(s) db.ref(`users/${uid}/store`).set({ name: s });
+            },
+
+            delCart(id) { db.ref(`users/${uid}/cart/${id}`).remove(); },
+
+            renderOrders(list) {
+                document.getElementById('list-orders').innerHTML = list.map(o => `
+                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div class="flex justify-between mb-2 font-bold text-xs text-slate-700"><span>${o.productName} (x${o.qty})</span><span class="text-emerald-500">${o.status}</span></div>
+                        <div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase"><span>Total: Rs. ${o.total}</span><span>Profit: Rs. ${o.profit}</span></div>
+                    </div>`).join('');
+            },
+
+            calcStats(list) {
+                const totalProfit = list.filter(o => o.status !== 'Cancelled').reduce((a, b) => a + (b.profit || 0), 0);
+                document.getElementById('stat-profit').innerText = 'Rs. ' + totalProfit;
+                document.getElementById('stat-orders').innerText = list.length;
+            },
+
+            renderCats() {
+                document.getElementById('list-cats').innerHTML = this.cats.map(c => `<div class="cat-btn ${c==='All'?'active':''}" onclick="app.filterCat('${c}', this)">${c}</div>`).join('');
+                this.filterCat('All', document.querySelector('.cat-btn'));
+            },
+
+            filterCat(c, el) {
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
+                const f = c === 'All' ? this.prods : this.prods.filter(p => p.category === c);
+                document.getElementById('grid-cats').innerHTML = `<div class="grid grid-cols-2 gap-3">${f.map(p => `
+                    <div class="bg-white border rounded-[20px] overflow-hidden" onclick="app.openDetail('${p.id}')">
+                        <img src="${p.images ? p.images[0] : ''}" class="h-28 w-full object-contain p-2">
+                        <div class="p-2"><h4 class="text-[10px] font-bold truncate">${p.name}</h4><p class="text-xs font-black markaz-green">Rs. ${p.price}</p></div>
+                    </div>`).join('')}</div>`;
+            },
+
+            search(q) {
+                const f = this.prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase()));
+                this.renderHome(f);
+            },
+
+            share() {
+                const l = window.location.origin + window.location.pathname + "?pid=" + this.sel.id;
+                navigator.share ? navigator.share({title: this.sel.name, url: l}) : alert("Catalog Link: " + l);
+            }
+        };
+
+        function switchView(v) {
+            ['home', 'category', 'profile', 'cart', 'orders', 'favs', 'post'].forEach(id => {
+                const el = document.getElementById('view-'+id);
+                if(el) el.classList.add('hidden-view');
+            });
+            document.getElementById('view-'+v).classList.remove('hidden-view');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const nid = (v==='category'||v==='profile') ? 'nav-'+v : 'nav-home';
+            document.getElementById(nid).classList.add('active');
+            window.scrollTo(0,0);
+            lucide.createIcons();
+        }
+
+        app.init();
+    </script>
+</body>
+  </html>
