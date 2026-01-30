@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="google-site-verification" content="qg7B-qD2GpwbAsmwB7m-Q-h2BsOPsqT2r_3u9BgRdjs" />
+    <title>Alarix Marketplace</title>
+    <meta name="description" content="Alarix Marketplace Pakistan. Owned by Atal Shah, Alarix, Pakistan stores, Pakistani store, Atal store, store, daraz, Amazon, Spotify.">
+    
+    <link rel="shortcut icon" href="icon.png" type="image/png">
+    <link rel="icon" href="icon.png" type="image/png">
+    <meta name="theme-color" content="#00b894">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root { --primary: #00b894; --primary-dark: #008f72; --blue-tick: #3b82f6; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fff; color: #1e293b; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        
+        .markaz-bg { background-color: var(--primary); }
+        .markaz-green { color: var(--primary); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; } .delay-300 { animation-delay: 0.3s; }
+
+        .app-overlay { position: fixed; inset: 0; background: white; z-index: 600; display: none; flex-direction: column; }
+        .app-overlay.active { display: flex; animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        /* Phone Input Styling */
+        .phone-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+        .phone-flag { position: absolute; left: 0; top: 0; bottom: 0; background: #f1f5f9; border: 1.5px solid #e2e8f0; border-right: none; border-radius: 14px 0 0 14px; display: flex; items-center; padding: 0 12px; gap: 6px; z-index: 10; font-size: 13px; font-weight: 700; color: #64748b; }
+        .phone-input { padding-left: 80px !important; border-radius: 14px !important; }
+
+        /* Inputs */
+        .input-field { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #fff; outline: none; transition: all 0.3s; font-size: 14px; font-weight: 500; }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.08); transform: translateY(-1px); }
+        select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; align-items: center; z-index: 500; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-link { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #94a3b8; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .nav-link.active { color: var(--primary); }
+
+        .btn-primary { background: var(--primary); color: white; padding: 16px; border-radius: 16px; font-weight: 800; width: 100%; text-align: center; display: flex; items-center; justify-content: center; gap: 8px; transition: transform 0.1s; }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        .profile-upload { width: 100px; height: 100px; border-radius: 50%; background: #f1f5f9; border: 2px dashed #cbd5e1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto; }
+        .profile-upload img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .img-slot { aspect-ratio: 1; border: 2px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; background: #f8fafc; }
+        .img-slot.active { border-style: solid; border-color: var(--primary); }
+        .img-slot img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Slider */
+        .slider-container { position: relative; width: 100%; height: 400px; background: #fff; }
+        .img-slider { display: flex; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; height: 100%; width: 100%; }
+        .img-slider::-webkit-scrollbar { display: none; }
+        .slide-item { flex: 0 0 100%; width: 100%; height: 100%; snap-align: center; display: flex; justify-content: center; align-items: center; }
+        .slide-item img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; background: rgba(255, 255, 255, 0.9); border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: 1px solid #f1f5f9; }
+        .btn-prev { left: 16px; } .btn-next { right: 16px; }
+
+        /* FIXED Categories Layout */
+        #view-category { display: flex; height: calc(100vh - 145px); overflow: hidden; }
+        .cat-sidebar { width: 95px; background: #f8fafc; overflow-y: auto; border-right: 1px solid #f1f5f9; flex-shrink: 0; padding-bottom: 20px; }
+        #grid-cats { flex: 1; padding: 16px; overflow-y: auto; padding-bottom: 20px; }
+        
+        .official-badge { display: inline-flex; align-items: center; gap: 2px; color: var(--blue-tick); }
+        
+        #toast-container { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 3000; pointer-events: none; }
+        .toast { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; margin-bottom: 10px; transform: translateY(-150%); transition: transform 0.4s; pointer-events: auto; border: 1px solid #f1f5f9; }
+        .toast.show { transform: translateY(0); }
+        .toast.success .icon-box { background: #dcfce7; color: #16a34a; }
+        .toast.error .icon-box { background: #fee2e2; color: #dc2626; }
+        .icon-box { width: 36px; height: 36px; rounded-full; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
+
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid var(--primary); width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #splash { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .hidden-view { display: none !important; }
+        
+        .seller-pic-sm { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0; }
+        
+        .color-option { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .color-option.selected { border-color: var(--primary); transform: scale(1.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .color-option i { color: white; display: none; }
+        .color-option.selected i { display: block; }
+
+        .cat-btn { padding: 18px 8px; font-size: 10px; font-weight: 800; text-align: center; color: #64748b; border-left: 3px solid transparent; cursor: pointer; }
+        .cat-btn.active { background: white; color: var(--primary); border-left-color: var(--primary); }
+
+        /* Chat Bubbles */
+        .chat-bubble { max-width: 75%; padding: 12px; border-radius: 16px; font-size: 13px; margin-bottom: 8px; position: relative; word-wrap: break-word; }
+        .chat-bubble.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-bubble.admin { background: #f1f5f9; color: #334155; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-img { border-radius: 12px; max-width: 100%; margin-bottom: 4px; display: block; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash">
+        <div class="w-24 h-24 markaz-bg rounded-[32px] flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-emerald-200 animate-bounce">A</div>
+        <h1 class="mt-6 text-3xl font-black tracking-tighter text-slate-800">ALARIX</h1>
+        <p class="text-slate-400 text-[10px] font-bold tracking-[0.4em] uppercase mt-2">Pakistan's #1 Reselling App</p>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- NOTIFICATION PERMISSION BANNER -->
+    <div id="notif-banner" class="fixed top-16 left-4 right-4 bg-slate-900 text-white p-4 rounded-xl shadow-xl z-50 hidden flex-col gap-3 animate-fade-in">
+        <div class="flex items-start gap-3">
+            <div class="bg-white/20 p-2 rounded-full"><i data-lucide="bell" class="w-5 h-5"></i></div>
+            <div>
+                <h4 class="font-bold text-sm">Enable Notifications?</h4>
+                <p class="text-xs text-slate-400 mt-1">Get instant alerts when Admin replies to your messages.</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="app.requestNotif()" class="flex-1 bg-white text-slate-900 py-2 rounded-lg text-xs font-bold">Allow</button>
+            <button onclick="document.getElementById('notif-banner').remove()" class="flex-1 bg-white/10 text-white py-2 rounded-lg text-xs font-bold">Later</button>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-[400] px-5 h-16 flex items-center justify-between border-b border-slate-100">
+        <div class="flex items-center gap-2" onclick="switchView('home')">
+            <div class="markaz-green"><i data-lucide="zap" class="fill-current w-6 h-6"></i></div>
+            <h1 class="text-xl font-black tracking-tight">ALARIX</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- CHAT ICON -->
+            <div onclick="app.openChat()" class="relative p-1">
+                <i data-lucide="message-circle" class="w-6 h-6 text-slate-400"></i>
+                <span id="chat-badge" class="hidden absolute top-0 right-0 markaz-bg text-white text-[9px] w-3 h-3 rounded-full border-2 border-white"></span>
+            </div>
+            <div onclick="switchView('favs')" class="relative p-1"><i data-lucide="bookmark" class="w-6 h-6 text-slate-400"></i></div>
+            <div onclick="switchView('cart')" class="relative p-1"><i data-lucide="shopping-bag" class="w-6 h-6 text-slate-400"></i><span id="cart-badge" class="absolute top-0 right-0 markaz-bg text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-white">0</span></div>
+        </div>
+    </header>
+
+    <!-- MAIN APP VIEWS -->
+    <main class="mt-16 pb-24">
+        <!-- Home -->
+        <section id="view-home" class="px-4 pt-4 animate-fade-in">
+            <div class="relative mb-5">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                <input type="text" placeholder="Search catalogs..." class="input-field pl-11 bg-slate-50 border-transparent focus:bg-white" oninput="app.search(this.value)">
+            </div>
+            <div id="grid-home" class="grid grid-cols-2 gap-3"></div>
+        </section>
+
+        <!-- Categories -->
+        <section id="view-category" class="hidden-view animate-fade-in">
+            <div class="cat-sidebar no-scrollbar" id="list-cats"></div>
+            <div id="grid-cats" class="no-scrollbar"></div>
+        </section>
+
+        <!-- Profile -->
+        <section id="view-profile" class="hidden-view p-6 animate-fade-in">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-emerald-100 border-2 border-slate-100 bg-slate-50">
+                        <img id="u-pic" src="" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h2 id="u-name" class="text-lg font-black text-slate-800 flex items-center gap-1">Reseller</h2>
+                        <p id="u-city" class="text-xs font-bold text-slate-400 uppercase"></p>
+                    </div>
+                </div>
+                <button onclick="app.openEditProfile()" class="bg-slate-100 p-3 rounded-full hover:bg-slate-200 transition"><i data-lucide="edit-2" class="w-4 h-4 text-slate-600"></i></button>
+            </div>
+            
+            <!-- Verify Badge Section -->
+            <div id="verify-section" class="mb-8">
+                <button onclick="app.verifyUser()" class="w-full bg-blue-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-blue-200 active:scale-95 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 p-2 rounded-full"><i data-lucide="badge-check" class="text-white w-5 h-5"></i></div>
+                        <div class="text-left">
+                            <p class="text-xs font-black uppercase tracking-wider">Get Blue Badge</p>
+                            <p class="text-[10px] opacity-80">Pin products for 3 days • Rs. 500/mo</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-white"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <div class="bg-emerald-50 p-5 rounded-3xl border border-emerald-100">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase mb-1">Total Profit</p>
+                    <h3 id="stat-profit" class="text-xl font-black text-emerald-900">Rs. 0</h3>
+                </div>
+                <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-600 uppercase mb-1">Orders Done</p>
+                    <h3 id="stat-orders" class="text-xl font-black text-blue-900">0</h3>
+                </div>
+            </div>
+
+            <div id="seller-hub" class="space-y-3"></div>
+            
+            <div class="mt-8">
+                <h3 class="font-black text-sm text-slate-700 mb-4 uppercase tracking-widest">My Listed Products</h3>
+                <div id="my-products-grid" class="space-y-3"></div>
+            </div>
+
+            <button onclick="switchView('orders')" class="w-full flex justify-between p-5 bg-slate-50 rounded-2xl font-bold text-sm mt-6 hover:bg-slate-100 transition"><span>My Orders</span><i data-lucide="chevron-right"></i></button>
+        </section>
+
+        <section id="view-cart" class="hidden-view p-5 animate-fade-in"><h2 class="text-xl font-black mb-5">Bag</h2><div id="list-cart" class="space-y-4"></div></section>
+        <section id="view-orders" class="hidden-view p-5 animate-fade-in"><div class="flex items-center gap-3 mb-5"><i data-lucide="arrow-left" onclick="switchView('profile')"></i><h2 class="text-xl font-black">My Orders</h2></div><div id="list-orders" class="space-y-4"></div></section>
+        
+        <!-- FAVORITES SECTION -->
+        <section id="view-favs" class="hidden-view p-5 animate-fade-in">
+            <h2 class="text-xl font-black mb-5">My Saved Items</h2>
+            <div id="grid-favs" class="grid grid-cols-2 gap-3"></div>
+        </section>
+        
+        <!-- Post View -->
+        <section id="view-post" class="hidden-view p-6 animate-fade-in">
+            <div class="flex items-center gap-3 mb-6"><i data-lucide="arrow-left" onclick="switchView('profile')"></i><h2 class="text-xl font-black">New Catalog</h2></div>
+            <div class="space-y-4 pb-10">
+                <input type="text" id="post-name" class="input-field animate-fade-in delay-100" placeholder="Product Title">
+                <input type="number" id="post-price" class="input-field animate-fade-in delay-100" placeholder="Wholesale Price (Rs)">
+                <div class="grid grid-cols-2 gap-3 animate-fade-in delay-100">
+                    <input type="number" id="post-delivery" class="input-field" placeholder="Del. Fee (Default 125)">
+                    <input type="number" id="post-handling" class="input-field" placeholder="Packing/Cash Charges">
+                </div>
+                <select id="post-cat" class="input-field animate-fade-in delay-200"><option value="" disabled selected>Select Category</option></select>
+                
+                <!-- Location Dropdown -->
+                <div class="relative animate-fade-in delay-200">
+                    <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 z-10"></i>
+                    <select id="post-loc" class="input-field pl-10 text-slate-700"><option value="" disabled selected>Select Location</option></select>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 animate-fade-in delay-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold text-slate-600">Available in Colors?</span>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="app.toggleColorSection(true)" id="btn-col-yes" class="px-3 py-1 text-xs font-bold rounded-lg border bg-white">Yes</button>
+                            <button type="button" onclick="app.toggleColorSection(false)" id="btn-col-no" class="px-3 py-1 text-xs font-bold rounded-lg border bg-slate-800 text-white">No</button>
+                        </div>
+                    </div>
+                    <div id="color-palette" class="hidden mt-3 grid grid-cols-6 gap-2"></div>
+                </div>
+                <div class="pt-2 animate-fade-in delay-300">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Images</p>
+                    <div class="grid grid-cols-5 gap-2">
+                        <div class="img-slot" onclick="app.triggerSlot(0)" id="slot-0"><i data-lucide="plus" class="text-slate-300"></i></div>
+                        <div class="img-slot" onclick="app.triggerSlot(1)" id="slot-1"><i data-lucide="plus" class="text-slate-300"></i></div>
+                        <div class="img-slot" onclick="app.triggerSlot(2)" id="slot-2"><i data-lucide="plus" class="text-slate-300"></i></div>
+                        <div class="img-slot" onclick="app.triggerSlot(3)" id="slot-3"><i data-lucide="plus" class="text-slate-300"></i></div>
+                        <div class="img-slot" onclick="app.triggerSlot(4)" id="slot-4"><i data-lucide="plus" class="text-slate-300"></i></div>
+                    </div>
+                    <input type="file" id="slot-input" class="hidden" accept="image/*" onchange="app.handleSlotUpload(this)">
+                </div>
+                <textarea id="post-desc" class="input-field animate-fade-in delay-300" placeholder="Description..." rows="4"></textarea>
+                <button id="btn-publish" onclick="app.publish()" class="btn-primary mt-4 shadow-xl animate-fade-in delay-300">Publish Catalog</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- SETTINGS & ABOUT OVERLAY -->
+    <div id="overlay-settings" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white sticky top-0">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">About Alarix</h2>
+        </header>
+        <div class="p-6 overflow-y-auto">
+            <div class="text-center mb-8 animate-fade-in">
+                <div class="w-24 h-24 mx-auto markaz-bg rounded-full flex items-center justify-center text-white text-5xl font-black mb-4 shadow-xl">A</div>
+                <h1 class="text-2xl font-black text-slate-800">ALARIX COMPANY</h1>
+                <p class="text-slate-500 font-medium mt-2">Owned by <strong>Atal Shah</strong></p>
+                <p class="text-sm text-slate-400 mt-4 leading-relaxed">
+                    Alarix is Pakistan's leading wholesale marketplace technology. We provide high-quality digital solutions for resellers and businesses.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERIFICATION OVERLAY -->
+    <div id="overlay-verify" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white sticky top-0">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">Get Verified</h2>
+        </header>
+        <div class="p-6 overflow-y-auto pb-20">
+            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 mb-6 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="badge-check" class="w-8 h-8 text-blue-600"></i>
+                </div>
+                <h3 class="text-lg font-black text-blue-900">Unlock Blue Badge</h3>
+                <p class="text-xs text-blue-700 mt-1 mb-4">Rs. 500 / Month</p>
+                <ul class="text-left space-y-2 text-sm text-slate-700">
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Official Blue Tick on Profile</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Products Pinned for 3 Days</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> Increased Buyer Trust</li>
+                </ul>
+            </div>
+            <h4 class="font-black text-sm uppercase text-slate-400 mb-4 tracking-widest">Payment Method</h4>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-3">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEO Easypaisa Number</span>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="font-bold text-lg text-slate-800">+923284378937</span>
+                    <button onclick="app.copyToClip('03284378937')" class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 active:scale-95 transition">Copy</button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEO Easypaisa Name</span>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="font-bold text-lg text-slate-800 tracking-widest">****</span>
+                    <button onclick="app.copyToClip('UMEED UMEED')" class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 active:scale-95 transition">Copy</button>
+                </div>
+            </div>
+            <h4 class="font-black text-sm uppercase text-slate-400 mb-4 tracking-widest">Submit Proof</h4>
+            <div class="space-y-4">
+                <input type="text" id="verify-tid" class="input-field" placeholder="Enter Transaction ID (TID)">
+                <div class="img-slot w-full h-32" onclick="document.getElementById('verify-proof-input').click()" id="verify-proof-preview">
+                    <div class="flex flex-col items-center gap-2 text-slate-400">
+                        <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                        <span class="text-xs font-bold">Upload Screenshot</span>
+                    </div>
+                </div>
+                <input type="file" id="verify-proof-input" class="hidden" accept="image/*" onchange="app.handleVerifyProofUpload(this)">
+                <button onclick="app.submitVerification()" class="btn-primary bg-blue-600 shadow-xl shadow-blue-200">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHAT OVERLAY -->
+    <div id="overlay-chat" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white sticky top-0 shadow-sm z-10">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <div class="ml-4 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full markaz-bg flex items-center justify-center text-white"><i data-lucide="headset" class="w-4 h-4"></i></div>
+                <div>
+                    <h2 class="font-black text-sm">Alarix Support</h2>
+                    <p class="text-[10px] text-emerald-500 font-bold">Online</p>
+                </div>
+            </div>
+        </header>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col"></div>
+        <div class="p-3 bg-white border-t pb-8">
+            <div class="flex items-center gap-2">
+                <input type="file" id="chat-file-input" class="hidden" accept="image/*" onchange="app.handleChatImg(this)">
+                <button onclick="document.getElementById('chat-file-input').click()" class="p-3 bg-slate-100 rounded-full"><i data-lucide="image" class="w-5 h-5 text-slate-500"></i></button>
+                <input type="text" id="chat-input" class="flex-1 bg-slate-100 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Type a message...">
+                <button onclick="app.sendChatMsg()" class="p-3 markaz-bg text-white rounded-full"><i data-lucide="send" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT DETAIL OVERLAY -->
+    <div id="overlay-detail" class="app-overlay">
+        <header class="h-16 flex items-center justify-between px-5 border-b sticky top-0 bg-white z-10">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <div class="flex gap-4">
+                <button onclick="app.toggleFav()" class="bg-slate-100 p-2 rounded-full active:scale-95 transition"><i id="det-fav-icon" data-lucide="bookmark" class="w-5 h-5 text-slate-400"></i></button>
+                <button onclick="app.downloadImages()" class="bg-slate-100 p-2 rounded-full"><i data-lucide="download" class="w-5 h-5 text-slate-600"></i></button>
+                <button onclick="app.share()" class="bg-slate-100 p-2 rounded-full"><i data-lucide="share-2" class="w-5 h-5 text-slate-600"></i></button>
+            </div>
+        </header>
+        <div class="overflow-y-auto flex-1 pb-32">
+            <div class="slider-container group">
+                <div id="btn-prev" onclick="app.slide(-1)" class="slider-btn btn-prev"><i data-lucide="chevron-left" class="w-6 h-6 text-slate-700"></i></div>
+                <div id="btn-next" onclick="app.slide(1)" class="slider-btn btn-next"><i data-lucide="chevron-right" class="w-6 h-6 text-slate-700"></i></div>
+                <div id="det-slider" class="img-slider"></div>
+                <div id="slider-dots" class="absolute bottom-4 left-0 w-full flex justify-center gap-2 z-10"></div>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h2 id="det-price" class="text-3xl font-black markaz-green"></h2>
+                        <button onclick="app.toggleRealLike()" class="flex items-center gap-2 mt-3 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 active:scale-95 transition">
+                            <i id="det-like-icon" data-lucide="heart" class="w-5 h-5 text-slate-300"></i>
+                            <span id="det-like-count" class="text-xs font-bold text-slate-500">0 Likes</span>
+                        </button>
+                    </div>
+                    <div class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">In Stock</div>
+                </div>
+                <h1 id="det-name" class="text-lg font-bold text-slate-700 mb-2 leading-tight"></h1>
+                <div class="flex items-center gap-1 mb-6"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i><p id="det-loc" class="text-xs font-bold text-slate-400 uppercase"></p></div>
+                
+                <div id="det-colors-container" class="mb-6 hidden">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Available Colors</p>
+                    <div id="det-colors-list" class="flex flex-wrap gap-2"></div>
+                </div>
+                
+                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex justify-between items-center mb-8">
+                    <div>
+                        <p class="text-[10px] font-black text-orange-600 uppercase">Shipping & Handling</p>
+                        <p class="text-sm font-bold text-orange-900">Total Rs. <span id="det-shipping">125</span></p>
+                    </div>
+                    <i data-lucide="truck" class="w-8 h-8 text-orange-200"></i>
+                </div>
+
+                <div class="flex items-center justify-between mb-8">
+                    <span class="font-bold text-slate-500">Order Quantity</span>
+                    <div class="flex items-center gap-5 bg-slate-100 rounded-2xl p-1.5">
+                        <button onclick="app.updateQty(-1)" class="w-10 h-10 bg-white rounded-xl font-bold text-xl">-</button>
+                        <span id="det-qty" class="font-black text-lg">1</span>
+                        <button onclick="app.updateQty(1)" class="w-10 h-10 bg-white rounded-xl font-bold text-xl">+</button>
+                    </div>
+                </div>
+
+                <h3 class="font-black text-xs uppercase text-slate-400 mb-3 tracking-widest">Details</h3>
+                <p id="det-desc" class="text-sm text-slate-500 leading-relaxed whitespace-pre-line"></p>
+                <button onclick="app.downloadImages()" class="w-full mt-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2 hover:bg-slate-50 transition"><i data-lucide="download-cloud" class="w-4 h-4"></i> Download Photos</button>
+            </div>
+        </div>
+        <div class="fixed bottom-0 w-full p-4 bg-white border-t flex gap-3 h-24 items-center">
+            <button onclick="app.addToCart()" class="flex-1 border-2 border-emerald-500 markaz-green font-bold py-4 rounded-2xl active:scale-95 transition">Add to Bag</button>
+            <button onclick="app.openOrderStep1()" class="flex-1 markaz-bg text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition">Order Now</button>
+        </div>
+    </div>
+
+    <!-- ORDER OVERLAY -->
+    <div id="overlay-order" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white sticky top-0">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">Checkout</h2>
+        </header>
+        <div class="p-6 overflow-y-auto flex-1">
+            <div id="ord-step-1">
+                <div class="bg-slate-50 p-6 rounded-[32px] mb-8 border">
+                    <div class="flex justify-between mb-3 text-sm font-bold"><span class="text-slate-400">Wholesale (x<span id="summ-qty">1</span>)</span><span id="summ-wholesale"></span></div>
+                    <div class="flex justify-between mb-5 text-sm font-bold"><span class="text-slate-400">Delivery & Hand.</span><span id="summ-ship"></span></div>
+                    <div id="waived-msg" class="hidden mb-3 text-xs text-emerald-600 font-bold bg-emerald-100 p-2 rounded-lg text-center">Handling Charges Waived!</div>
+                    <div class="border-t border-dashed border-slate-300 pt-6">
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-3">Your Profit (Per Piece)</label>
+                        <input type="number" id="input-profit" class="input-field text-xl font-black placeholder:font-normal" placeholder="0" oninput="app.calcTotal()">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-10 px-2">
+                    <span class="font-bold text-slate-500">Customer Total</span>
+                    <span id="summ-total" class="text-3xl font-black markaz-green">Rs. 0</span>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="app.openOrderStep2('cod')" class="btn-primary shadow-xl bg-slate-800 text-white">Cash on Delivery</button>
+                    <button onclick="app.openOrderStep2('advance')" class="btn-primary shadow-xl bg-blue-600 text-white flex justify-between px-6"><span>Advance Payment</span> <span class="text-[10px] bg-blue-500 px-2 py-0.5 rounded uppercase">Verified</span></button>
+                </div>
+            </div>
+
+            <div id="ord-step-proof" class="hidden-view space-y-4 pb-10">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center mb-2">
+                    <p class="text-xs text-blue-800 font-bold">Please send payment to proceed.</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEO Easypaisa Number</span>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="font-bold text-lg text-slate-800">+923284378937</span>
+                        <button onclick="app.copyToClip('03284378937')" class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 active:scale-95 transition">Copy</button>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">CEO Easypaisa Name</span>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="font-bold text-lg text-slate-800 tracking-widest">****</span>
+                        <button onclick="app.copyToClip('UMEED UMEED')" class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 active:scale-95 transition">Copy</button>
+                    </div>
+                </div>
+                <div class="mt-6 space-y-3">
+                    <input type="text" id="pay-tid" class="input-field" placeholder="Enter Transaction ID (TID)">
+                    <div class="img-slot w-full h-32" onclick="document.getElementById('proof-input').click()" id="proof-preview">
+                        <div class="flex flex-col items-center gap-2 text-slate-400">
+                            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                            <span class="text-xs font-bold">Upload Screenshot</span>
+                        </div>
+                    </div>
+                    <input type="file" id="proof-input" class="hidden" accept="image/*" onchange="app.handleProofUpload(this)">
+                </div>
+                <button onclick="app.confirmProof()" class="btn-primary mt-4">Confirm Payment</button>
+            </div>
+
+            <div id="ord-step-2" class="hidden-view space-y-4 pb-10">
+                <input type="text" id="c-biz" class="input-field" placeholder="Business Name (On Label)" required>
+                <input type="text" id="c-name" class="input-field animate-fade-in" placeholder="Full Customer Name">
+                <div class="phone-wrapper animate-fade-in delay-100">
+                    <div class="phone-flag"><img src="https://flagcdn.com/w20/pk.png" width="16"> +92</div>
+                    <input type="tel" id="c-phone" class="input-field phone-input" placeholder="3001234567">
+                </div>
+                <div class="relative animate-fade-in delay-200">
+                    <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 z-10"></i>
+                    <select id="c-city" class="input-field pl-10 text-slate-700"><option value="" disabled selected>Select City</option></select>
+                </div>
+                <textarea id="c-address" class="input-field animate-fade-in delay-200" placeholder="Complete Address" rows="3"></textarea>
+                <button id="btn-confirm-order" onclick="app.processOrder()" class="btn-primary shadow-xl mt-4 animate-fade-in delay-300">Confirm Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE EDIT MODAL -->
+    <div id="overlay-profile-edit" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">Edit Profile</h2>
+        </header>
+        <div class="p-6 space-y-4">
+            <div class="flex flex-col items-center mb-4">
+                <div class="profile-upload" onclick="document.getElementById('edit-pic-input').click()">
+                    <img id="edit-pic-prev" src="">
+                </div>
+                <span class="text-xs font-bold text-primary mt-2">Change Photo</span>
+                <input type="file" id="edit-pic-input" class="hidden" accept="image/*" onchange="app.handleProfileUpload(this, 'edit')">
+            </div>
+            <input type="text" id="edit-name" class="input-field" placeholder="Your Name">
+            <div class="relative">
+                <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 z-10"></i>
+                <select id="edit-city" class="input-field pl-10 text-slate-700"><option value="" disabled selected>Select City</option></select>
+            </div>
+            <input type="text" id="edit-store" class="input-field" placeholder="Business Name">
+            <button onclick="app.saveProfile()" class="btn-primary">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- PRODUCT EDIT MODAL -->
+    <div id="overlay-product-edit" class="app-overlay">
+        <header class="h-16 flex items-center px-5 border-b bg-white">
+            <i data-lucide="arrow-left" onclick="app.closeOverlays()"></i>
+            <h2 class="ml-4 font-black">Edit Product</h2>
+        </header>
+        <div class="p-6 space-y-4">
+             <input type="text" id="p-edit-name" class="input-field">
+             <input type="number" id="p-edit-price" class="input-field">
+             <button onclick="app.saveProductEdit()" class="btn-primary">Update Product</button>
+             <button onclick="app.closeOverlays()" class="w-full text-center text-xs text-slate-400 font-bold mt-2">Cancel</button>
+        </div>
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 z-[1500] bg-white hidden p-10 flex flex-col justify-center overflow-y-auto">
+        <h2 class="text-4xl font-black mb-2 tracking-tighter text-slate-800">Reseller Sign In</h2>
+        <p class="text-slate-400 mb-8 font-medium">Create your business ID to start reselling.</p>
+        <div class="flex justify-center mb-6">
+            <div class="profile-upload shadow-lg" onclick="document.getElementById('reg-pic-input').click()">
+                 <img id="reg-pic-prev" src="" class="hidden">
+                 <div id="reg-pic-placeholder" class="text-center">
+                     <i data-lucide="camera" class="w-6 h-6 text-slate-400 mx-auto mb-1"></i>
+                     <span class="text-[8px] font-bold text-slate-400 uppercase">Upload Photo</span>
+                 </div>
+                 <div id="reg-loader" class="absolute inset-0 bg-white/80 flex items-center justify-center hidden"><div class="loader"></div></div>
+            </div>
+            <input type="file" id="reg-pic-input" class="hidden" accept="image/*" onchange="app.handleProfileUpload(this, 'reg')">
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="reg-name" class="input-field animate-fade-in delay-100" placeholder="Your Name">
+            <div class="phone-wrapper animate-fade-in delay-200">
+                <div class="phone-flag"><img src="https://flagcdn.com/w20/pk.png" width="16"> +92</div>
+                <input type="tel" id="reg-wa" class="input-field phone-input" placeholder="3001234567">
+            </div>
+            <div class="relative animate-fade-in delay-300">
+                <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 z-10"></i>
+                <select id="reg-city" class="input-field pl-10 text-slate-700"><option value="" disabled selected>Select Your City</option></select>
+            </div>
+            <button onclick="app.register()" class="btn-primary mt-4 shadow-xl animate-fade-in delay-300">Start My Business</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div onclick="switchView('home')" class="nav-link active" id="nav-home"><i data-lucide="home"></i><span>Home</span></div>
+        <div onclick="switchView('category')" class="nav-link" id="nav-category"><i data-lucide="layout-grid"></i><span>Categories</span></div>
+        <div onclick="switchView('profile')" class="nav-link" id="nav-profile"><i data-lucide="user"></i><span>Profile</span></div>
+    </nav>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyA3D_1IRdpPB_2rmF5rtGqvJ1EXFNF2zxc", authDomain: "alarix-61e90.firebaseapp.com", databaseURL: "https://alarix-61e90-default-rtdb.firebaseio.com", projectId: "alarix-61e90", storageBucket: "alarix-61e90.firebasestorage.app", messagingSenderId: "747193234958", appId: "1:747193234958:web:c69501009d5950b63d6e5f" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const uid = localStorage.getItem('al_uid') || 'U'+Date.now();
+        localStorage.setItem('al_uid', uid);
+        const IMGBB_API_KEY = "1e9b151a1301a93017bfa29a913708cd";
+
+        const app = {
+            prods: [], cart: [], favs: [], store: null, user: null, sel: null, qty: 1, 
+            uploadSlots: [null, null, null, null, null], currentSlotIdx: 0,
+            currSlide: 0, tempProfilePic: null, selectedColors: [], paymentMode: 'cod', editProdId: null,
+            tempProofImg: null, tempVerifyImg: null, loadTime: Date.now(),
+            
+            cats: ['All', 'Ladies Stitched', 'Ladies Unstitched', 'Abayas', 'Shawls', 'Mens Stitched', 'Mens Unstitched', 'Bedding', 'Decor', 'Electronics', 'Mobile Acc', 'Watches', 'Jewellery', 'Bags', 'Footwear', 'Beauty', 'Kids', 'Auto', 'Pet'],
+            cities: ["Karachi", "Lahore", "Islamabad", "Peshawar", "Rawalpindi", "Faisalabad", "Multan", "Sialkot", "Gujranwala", "Quetta", "Hyderabad", "Sukkur", "Bahawalpur", "Gujrat", "Sahiwal", "Okara", "Mirpur AJK"],
+            colors: [{name:'Red', hex:'#ef4444'}, {name:'Blue', hex:'#3b82f6'}, {name:'Green', hex:'#22c55e'}, {name:'Black', hex:'#0f172a'}, {name:'White', hex:'#ffffff'}, {name:'Yellow', hex:'#eab308'}, {name:'Pink', hex:'#ec4899'}, {name:'Purple', hex:'#a855f7'}, {name:'Orange', hex:'#f97316'}, {name:'Grey', hex:'#64748b'}, {name:'Brown', hex:'#78350f'}, {name:'Beige', hex:'#f5f5dc'}],
+
+            init() {
+                setTimeout(()=>document.getElementById('splash').style.display='none', 2500);
+                this.user = JSON.parse(localStorage.getItem('al_user'));
+                this.cities.forEach(c => { 
+                    document.getElementById('reg-city').innerHTML += `<option>${c}</option>`; 
+                    document.getElementById('post-loc').innerHTML += `<option>${c}</option>`;
+                    document.getElementById('edit-city').innerHTML += `<option>${c}</option>`;
+                    document.getElementById('c-city').innerHTML += `<option>${c}</option>`;
+                });
+                this.cats.forEach(c => { if(c!=='All') document.getElementById('post-cat').innerHTML += `<option value="${c}">${c}</option>` });
+                document.getElementById('color-palette').innerHTML = this.colors.map(c => `<div class="color-option" style="background:${c.hex}" onclick="app.toggleColorSelection('${c.name}', this)"><i data-lucide="check"></i></div>`).join('');
+                
+                if(!this.user) {
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                } else {
+                    this.sync();
+                    this.checkNotifPermission();
+                }
+                window.onpopstate = () => this.closeOverlays(true);
+                lucide.createIcons();
+            },
+
+            toast(msg, type='success') {
+                const con = document.getElementById('toast-container');
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.innerHTML = `<div class="icon-box"><i data-lucide="${type==='success'?'check':'alert-circle'}"></i></div><div class="text-sm font-bold text-slate-700">${msg}</div>`;
+                con.appendChild(el); lucide.createIcons();
+                requestAnimationFrame(() => el.classList.add('show'));
+                setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3000);
+            },
+
+            copyToClip(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+                document.body.appendChild(textArea); textArea.focus(); textArea.select();
+                try { document.execCommand('copy'); this.toast("Copied!", "success"); } 
+                catch (err) { this.toast("Copy failed", "error"); }
+                document.body.removeChild(textArea);
+            },
+
+            sanitizeProduct(p) {
+                const isOfficial = p.sellerName?.includes('Official') || p.isOfficial === true;
+                const isVerified = p.isSellerVerified === true; 
+                const safeImages = (p.images && p.images.length > 0) ? p.images : ['https://i.ibb.co/51y1Wq2/placeholder.png'];
+                return { ...p, name: p.name||'Alarix Product', price: p.price||0, location: p.location||'Pakistan', desc: p.desc||'No description.', sellerName: p.sellerName||'Reseller', images: safeImages, isOfficial: isOfficial, isVerified: isVerified };
+            },
+
+            async handleProfileUpload(input, mode) {
+                const file = input.files[0]; if(!file) return;
+                const loader = mode === 'reg' ? document.getElementById('reg-loader') : null; if(loader) loader.classList.remove('hidden');
+                const fd = new FormData(); fd.append('image', file); fd.append('key', IMGBB_API_KEY);
+                try {
+                    const req = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+                    const res = await req.json();
+                    if(res.success) {
+                        this.tempProfilePic = res.data.url;
+                        if(mode === 'reg') { document.getElementById('reg-pic-prev').src = res.data.url; document.getElementById('reg-pic-prev').classList.remove('hidden'); document.getElementById('reg-pic-placeholder').classList.add('hidden'); } 
+                        else { document.getElementById('edit-pic-prev').src = res.data.url; }
+                        this.toast("Photo uploaded!", "success");
+                    }
+                } catch(e) { this.toast("Upload failed", "error"); }
+                if(loader) loader.classList.add('hidden');
+            },
+
+            register() {
+                const n = document.getElementById('reg-name').value, w = document.getElementById('reg-wa').value, c = document.getElementById('reg-city').value;
+                if(!n || !w || !c) return this.toast("Missing fields", "error");
+                const u = { name: n, wa: '+92'+w, city: c, uid: uid, photo: this.tempProfilePic||'', isVerified: false };
+                localStorage.setItem('al_user', JSON.stringify(u));
+                db.ref(`users/${uid}/profile`).set(u).then(()=>location.reload());
+            },
+
+            sync() {
+                db.ref('products').on('value', s => {
+                    let raw = (s.val() ? Object.entries(s.val()).map(([id,v])=>({id,...v})) : []).map(p => this.sanitizeProduct(p));
+                    const now = Date.now();
+                    const threeDays = 3 * 24 * 60 * 60 * 1000;
+                    this.prods = raw.sort((a,b) => {
+                        const aPinned = a.isOfficial || (a.isVerified && (now - a.timestamp < threeDays));
+                        const bPinned = b.isOfficial || (b.isVerified && (now - b.timestamp < threeDays));
+                        if (aPinned && !bPinned) return -1;
+                        if (!aPinned && bPinned) return 1;
+                        return (b.timestamp||0) - (a.timestamp||0); 
+                    });
+                    this.renderHome(); 
+                    this.renderCats();
+                    this.renderMyProducts();
+                    if(this.sel && document.getElementById('overlay-detail').classList.contains('active')) {
+                        this.updateLikeUI(this.sel.id);
+                        this.updateFavUI(this.sel.id);
+                    }
+                });
+                db.ref(`users/${uid}`).on('value', s => {
+                    const d = s.val() || {};
+                    this.cart = d.cart ? Object.entries(d.cart).map(([k,v])=>({cartId:k,...v})) : [];
+                    this.favs = d.favs ? Object.values(d.favs) : [];
+                    this.store = d.store || null;
+                    if(d.profile) { this.user = d.profile; localStorage.setItem('al_user', JSON.stringify(this.user)); }
+                    this.updateUI();
+                });
+                db.ref('orders').on('value', s => {
+                    const all = s.val() ? Object.values(s.val()) : [];
+                    this.renderOrders(all.filter(o => o.buyerId === uid));
+                });
+                this.listenForMessages();
+            },
+
+            // --- CHAT & NOTIFICATIONS ---
+            checkNotifPermission() {
+                if(Notification.permission === 'default') document.getElementById('notif-banner').classList.remove('hidden');
+            },
+            requestNotif() {
+                Notification.requestPermission().then(p => {
+                    if(p === 'granted') {
+                        document.getElementById('notif-banner').remove();
+                        this.toast("Notifications Enabled!", "success");
+                    }
+                });
+            },
+            listenForMessages() {
+                db.ref(`messages/${uid}`).on('value', s => {
+                    const msgs = s.val() || {};
+                    const msgArr = Object.values(msgs);
+                    
+                    // Render if chat is open
+                    if(document.getElementById('overlay-chat').classList.contains('active')) {
+                        this.renderChat(msgArr);
+                    } else {
+                        // Check for new unread from admin for notification
+                        const last = msgArr[msgArr.length-1];
+                        if(last && last.sender === 'admin' && last.timestamp > this.loadTime) {
+                            if(Notification.permission === 'granted') {
+                                new Notification("Alarix Support", { body: "New message from Admin", icon: "icon.png" });
+                            } else {
+                                this.toast("New message from Support!", "success");
+                            }
+                        }
+                    }
+                });
+            },
+            openChat() {
+                document.getElementById('overlay-chat').classList.add('active');
+                history.pushState({overlay:true},"");
+                db.ref(`messages/${uid}`).once('value', s => {
+                    this.renderChat(s.val() ? Object.values(s.val()) : []);
+                });
+            },
+            renderChat(arr) {
+                const con = document.getElementById('chat-messages');
+                con.innerHTML = arr.map(m => `
+                    <div class="chat-bubble ${m.sender}">
+                        ${m.image ? `<img src="${m.image}" class="chat-img" onclick="window.open(this.src)">` : ''}
+                        ${m.text ? `<span>${m.text}</span>` : ''}
+                        <div class="text-[9px] opacity-70 text-right mt-1">${moment(m.timestamp).format('h:mm A')}</div>
+                    </div>
+                `).join('');
+                con.scrollTop = con.scrollHeight;
+            },
+            async sendChatMsg() {
+                const input = document.getElementById('chat-input');
+                const txt = input.value.trim();
+                if(!txt) return;
+                try {
+                    await db.ref(`messages/${uid}`).push({
+                        sender: 'user', text: txt, timestamp: Date.now()
+                    });
+                    input.value = '';
+                } catch(e) { this.toast("Failed to send", "error"); }
+            },
+            async handleChatImg(input) {
+                const file = input.files[0]; if(!file) return;
+                this.toast("Sending image...", "success");
+                const fd = new FormData(); fd.append('image', file); fd.append('key', IMGBB_API_KEY);
+                try {
+                    const r = await fetch('https://api.imgbb.com/1/upload', {method:'POST',body:fd});
+                    const d = await r.json();
+                    if(d.success) {
+                        await db.ref(`messages/${uid}`).push({
+                            sender: 'user', image: d.data.url, timestamp: Date.now()
+                        });
+                    } else throw new Error();
+                } catch(e) { this.toast("Image failed", "error"); }
+            },
+
+            // --- STANDARD APP LOGIC ---
+            renderHome(list = this.prods) {
+                document.getElementById('grid-home').innerHTML = list.map(p => {
+                    const badge = p.isOfficial ? '<span class="official-badge ml-1"><i data-lucide="badge-check" class="w-3 h-3 fill-blue-500 text-white"></i></span>' 
+                                : (p.isVerified ? '<span class="official-badge ml-1"><i data-lucide="badge-check" class="w-3 h-3 fill-blue-500 text-white"></i></span>' : '');
+                    const pinned = (p.isOfficial || (p.isVerified && (Date.now() - p.timestamp < 259200000))) ? '<div class="absolute top-2 left-2 bg-blue-500 text-white text-[8px] px-2 py-0.5 rounded-full font-bold uppercase shadow-lg z-10">Pinned</div>' : '';
+                    const sellerImg = p.sellerPhoto ? `<img src="${p.sellerPhoto}" class="seller-pic-sm">` : '';
+
+                    return `
+                    <div class="bg-white border border-slate-100 rounded-[24px] overflow-hidden animate-fade-in" onclick="app.openDetail('${p.id}')">
+                        <div class="h-44 bg-slate-50 flex items-center justify-center p-3 relative">
+                            <img src="${p.images[0]}" class="max-h-full object-contain">
+                            <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">${p.location}</div>
+                            ${p.isOfficial ? '<div class="absolute top-2 right-2 bg-blue-500 text-white text-[8px] px-2 py-0.5 rounded-full font-bold uppercase shadow-lg">Official</div>' : ''}
+                            ${!p.isOfficial ? pinned : ''}
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center gap-1 mb-1">
+                                ${sellerImg}
+                                <h3 class="text-xs font-bold truncate text-slate-700 flex items-center">${p.name} ${badge}</h3>
+                            </div>
+                            <div class="flex justify-between items-center mt-1"><p class="text-sm font-black markaz-green">Rs. ${p.price}</p></div>
+                        </div>
+                    </div>`;
+                }).join(''); lucide.createIcons();
+            },
+
+            renderMyProducts() {
+                const myProds = this.prods.filter(p => p.sellerId === uid);
+                const container = document.getElementById('my-products-grid');
+                if(myProds.length === 0) {
+                    container.innerHTML = `<div class="text-center text-slate-400 text-xs py-4">No products listed yet.</div>`;
+                    return;
+                }
+                container.innerHTML = myProds.map(p => `
+                    <div class="flex gap-4 bg-slate-50 p-4 rounded-2xl items-center border">
+                        <img src="${p.images[0]}" class="w-16 h-16 object-contain rounded-xl bg-white">
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold truncate text-slate-700">${p.name}</h4>
+                            <p class="text-sm font-black markaz-green">Rs. ${p.price}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="app.editProduct('${p.id}')" class="bg-white p-2 rounded-lg border hover:bg-slate-100"><i data-lucide="edit-2" class="w-4 h-4 text-blue-500"></i></button>
+                            <button onclick="app.deleteProduct('${p.id}')" class="bg-white p-2 rounded-lg border hover:bg-slate-100"><i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            editProduct(id) {
+                const p = this.prods.find(x => x.id === id);
+                if(!p) return;
+                this.editProdId = id;
+                document.getElementById('p-edit-name').value = p.name;
+                document.getElementById('p-edit-price').value = p.price;
+                document.getElementById('overlay-product-edit').classList.add('active');
+            },
+
+            saveProductEdit() {
+                const n = document.getElementById('p-edit-name').value;
+                const pr = document.getElementById('p-edit-price').value;
+                if(n && pr && this.editProdId) {
+                    try {
+                        db.ref(`products/${this.editProdId}`).update({name: n, price: pr});
+                        this.toast("Product Updated", "success");
+                        this.closeOverlays();
+                    } catch(e) { this.toast("Update failed", "error"); }
+                }
+            },
+
+            deleteProduct(id) {
+                if(confirm("Delete this product?")) {
+                    try {
+                        db.ref(`products/${id}`).remove();
+                        this.toast("Product Deleted", "success");
+                    } catch(e) { this.toast("Delete failed", "error"); }
+                }
+            },
+
+            verifyUser() {
+                if(this.user.isVerified) return this.toast("Already Verified!", "success");
+                document.getElementById('verify-tid').value = '';
+                this.tempVerifyImg = null;
+                document.getElementById('verify-proof-preview').innerHTML = `<div class="flex flex-col items-center gap-2 text-slate-400"><i data-lucide="upload-cloud" class="w-8 h-8"></i><span class="text-xs font-bold">Upload Screenshot</span></div>`;
+                lucide.createIcons();
+                document.getElementById('overlay-verify').classList.add('active'); history.pushState({overlay:true},"");
+            },
+
+            async handleVerifyProofUpload(input) {
+                const file = input.files[0]; if(!file) return;
+                const pv = document.getElementById('verify-proof-preview');
+                pv.innerHTML = '<div class="loader"></div>';
+                const fd = new FormData(); fd.append('image', file); fd.append('key', IMGBB_API_KEY);
+                try {
+                    const r = await fetch('https://api.imgbb.com/1/upload', {method:'POST',body:fd});
+                    const d = await r.json();
+                    if(d.success) {
+                        this.tempVerifyImg = d.data.url;
+                        pv.innerHTML = `<img src="${d.data.url}" class="w-full h-full object-cover rounded-xl">`;
+                        this.toast("Screenshot uploaded!", "success");
+                    }
+                } catch(e) { 
+                    pv.innerHTML = `<i data-lucide="upload-cloud" class="w-8 h-8 text-red-400"></i>`;
+                    this.toast("Upload failed", "error"); 
+                }
+                lucide.createIcons();
+            },
+
+            submitVerification() {
+                const tid = document.getElementById('verify-tid').value;
+                if(!tid) return this.toast("Please enter TID", "error");
+                if(!this.tempVerifyImg) return this.toast("Please upload proof", "error");
+                try {
+                    db.ref('verification_requests').push({
+                        uid: uid, name: this.user.name, phone: this.user.wa,
+                        tid: tid, proof: this.tempVerifyImg, timestamp: Date.now(), status: 'pending'
+                    });
+                    this.toast("Request Submitted!", "success");
+                    this.closeOverlays();
+                } catch(e) { this.toast("Error submitting", "error"); }
+            },
+
+            openDetail(id) {
+                this.sel = this.prods.find(p => p.id === id); if(!this.sel) return;
+                this.qty = 1; this.currSlide = 0;
+                
+                const images = (this.sel.images && this.sel.images.length > 0) ? this.sel.images : ['https://i.ibb.co/51y1Wq2/placeholder.png'];
+                document.getElementById('det-slider').innerHTML = images.map(img=>`<div class="slide-item"><img src="${img}"></div>`).join('');
+                
+                const badge = this.sel.isOfficial ? `<i data-lucide="badge-check" class="w-4 h-4 text-blue-500 fill-white ml-1"></i>` : (this.sel.isVerified ? `<i data-lucide="badge-check" class="w-4 h-4 text-blue-500 fill-white ml-1"></i>` : '');
+                document.getElementById('det-name').innerHTML = `${this.sel.name} ${badge}`;
+                document.getElementById('det-price').innerText = 'Rs. ' + this.sel.price;
+                document.getElementById('det-desc').innerText = this.sel.desc;
+                document.getElementById('det-qty').innerText = 1;
+                document.getElementById('det-loc').innerText = this.sel.location;
+                document.getElementById('det-shipping').innerText = parseInt(this.sel.deliveryFee||125)+parseInt(this.sel.handlingFee||0);
+                const colCont = document.getElementById('det-colors-container');
+                if(this.sel.colors && this.sel.colors.length>0) {
+                    colCont.classList.remove('hidden');
+                    document.getElementById('det-colors-list').innerHTML = this.sel.colors.map(c => `<div class="w-6 h-6 rounded-full border border-slate-200 shadow-sm" style="background:${this.colors.find(x=>x.name===c)?.hex||'#ccc'}" title="${c}"></div>`).join('');
+                } else colCont.classList.add('hidden');
+                
+                this.updateLikeUI(id);
+                this.updateFavUI(id);
+                document.getElementById('overlay-detail').classList.add('active'); history.pushState({overlay:true},""); lucide.createIcons();
+            },
+
+            toggleRealLike() { 
+                if(!this.sel) return; 
+                const ref = db.ref(`products/${this.sel.id}/likes/${uid}`); 
+                ref.once('value', s => { 
+                    if(s.exists()) ref.remove(); else { ref.set(true); this.toast("Liked!", "success"); }
+                }); 
+            },
+            updateLikeUI(id) {
+                const p = this.prods.find(x => x.id === id); if(!p) return;
+                const likes = p.likes || {}; const count = Object.keys(likes).length; const isLiked = likes[uid] === true;
+                document.getElementById('det-like-count').innerText = `${count} Likes`;
+                const icon = document.getElementById('det-like-icon');
+                if(isLiked) { icon.style.fill = '#ef4444'; icon.style.color = '#ef4444'; icon.parentElement.classList.add('border-red-100', 'bg-red-50'); } 
+                else { icon.style.fill = 'none'; icon.style.color = '#cbd5e1'; icon.parentElement.classList.remove('border-red-100', 'bg-red-50'); }
+            },
+            toggleFav() {
+                if(!this.sel) return;
+                const existing = this.favs.find(f => f.id === this.sel.id);
+                if(existing) {
+                    db.ref(`users/${uid}/favs`).orderByChild('id').equalTo(this.sel.id).once('value', s => { s.forEach(child => child.ref.remove()); });
+                    this.toast("Removed from Favorites", "success");
+                } else {
+                    db.ref(`users/${uid}/favs`).push(this.sel);
+                    this.toast("Saved to Favorites", "success");
+                }
+            },
+            updateFavUI(id) {
+                const isFav = this.favs.some(f => f.id === id);
+                const icon = document.getElementById('det-fav-icon');
+                if(isFav) { icon.style.fill = '#facc15'; icon.style.color = '#facc15'; } else { icon.style.fill = 'none'; icon.style.color = '#94a3b8'; }
+            },
+            addToCart() { 
+                const exists = this.cart.some(item => item.id === this.sel.id);
+                if(exists) return this.toast("Already in bag", "error");
+                try { db.ref(`users/${uid}/cart`).push(this.sel).then(()=>this.toast("Added to Bag", "success")); } catch(e){}
+            },
+
+            openOrderStep1() {
+                const ship = parseInt(this.sel.deliveryFee || 125) + parseInt(this.sel.handlingFee || 0);
+                document.getElementById('summ-wholesale').innerText = 'Rs. ' + (this.sel.price * this.qty);
+                document.getElementById('summ-ship').innerText = 'Rs. ' + ship;
+                document.getElementById('input-profit').value = '';
+                document.getElementById('waived-msg').classList.add('hidden'); 
+                this.calcTotal();
+                document.getElementById('ord-step-1').classList.remove('hidden-view');
+                document.getElementById('ord-step-2').classList.add('hidden-view');
+                document.getElementById('ord-step-proof').classList.add('hidden-view');
+                document.getElementById('overlay-order').classList.add('active'); history.pushState({overlay:true},"");
+            },
+
+            calcTotal() {
+                let ship = parseInt(this.sel.deliveryFee || 125) + parseInt(this.sel.handlingFee || 0);
+                if(this.paymentMode === 'advance') ship = parseInt(this.sel.deliveryFee || 125); 
+                const prof = parseInt(document.getElementById('input-profit').value) || 0;
+                const total = (parseInt(this.sel.price) * this.qty) + ship + (prof * this.qty);
+                document.getElementById('summ-total').innerText = 'Rs. ' + total;
+            },
+
+            openOrderStep2(mode) {
+                if(!document.getElementById('input-profit').value) return this.toast("Enter your profit", "error");
+                this.paymentMode = mode;
+                let ship = parseInt(this.sel.deliveryFee || 125);
+                const handling = parseInt(this.sel.handlingFee || 0);
+                if (mode === 'advance') {
+                    document.getElementById('summ-ship').innerHTML = `<span class="line-through text-red-300 mr-2">Rs. ${ship + handling}</span> Rs. ${ship}`;
+                    document.getElementById('waived-msg').classList.remove('hidden');
+                } else {
+                    ship += handling;
+                    document.getElementById('summ-ship').innerText = 'Rs. ' + ship;
+                    document.getElementById('waived-msg').classList.add('hidden');
+                }
+                const prof = parseInt(document.getElementById('input-profit').value) || 0;
+                const total = (parseInt(this.sel.price) * this.qty) + ship + (prof * this.qty);
+                document.getElementById('summ-total').innerText = 'Rs. ' + total;
+                document.getElementById('ord-step-1').classList.add('hidden-view');
+                if (mode === 'advance') {
+                    document.getElementById('ord-step-proof').classList.remove('hidden-view');
+                    document.getElementById('pay-tid').value = '';
+                    this.tempProofImg = null;
+                    document.getElementById('proof-preview').innerHTML = `<div class="flex flex-col items-center gap-2 text-slate-400"><i data-lucide="upload-cloud" class="w-8 h-8"></i><span class="text-xs font-bold">Upload Screenshot</span></div>`;
+                    lucide.createIcons();
+                } else {
+                    document.getElementById('ord-step-2').classList.remove('hidden-view');
+                    const btn = document.getElementById('btn-confirm-order');
+                    btn.innerText = "Confirm Order";
+                    btn.className = `btn-primary shadow-xl mt-4 text-white animate-fade-in delay-300 markaz-bg`;
+                }
+            },
+
+            async handleProofUpload(input) {
+                const file = input.files[0]; if(!file) return;
+                const pv = document.getElementById('proof-preview');
+                pv.innerHTML = '<div class="loader"></div>';
+                const fd = new FormData(); fd.append('image', file); fd.append('key', IMGBB_API_KEY);
+                try {
+                    const r = await fetch('https://api.imgbb.com/1/upload', {method:'POST',body:fd});
+                    const d = await r.json();
+                    if(d.success) {
+                        this.tempProofImg = d.data.url;
+                        pv.innerHTML = `<img src="${d.data.url}" class="w-full h-full object-cover rounded-xl">`;
+                        this.toast("Screenshot uploaded!", "success");
+                    }
+                } catch(e) { 
+                    pv.innerHTML = `<i data-lucide="upload-cloud" class="w-8 h-8 text-red-400"></i>`;
+                    this.toast("Upload failed", "error"); 
+                }
+                lucide.createIcons();
+            },
+
+            confirmProof() {
+                const tid = document.getElementById('pay-tid').value;
+                if(!tid) return this.toast("Enter TID", "error");
+                if(!this.tempProofImg) return this.toast("Upload Screenshot", "error");
+                document.getElementById('ord-step-proof').classList.add('hidden-view');
+                document.getElementById('ord-step-2').classList.remove('hidden-view');
+                const btn = document.getElementById('btn-confirm-order');
+                btn.innerText = "Complete Order";
+                btn.className = `btn-primary shadow-xl mt-4 text-white animate-fade-in delay-300 bg-blue-600`;
+            },
+
+            async processOrder() {
+                const n = document.getElementById('c-name').value, ph = document.getElementById('c-phone').value, ad = document.getElementById('c-address').value, biz = document.getElementById('c-biz').value;
+                if(!n || !ph || !ad || !biz) return this.toast("Fill details", "error");
+                let ship = parseInt(this.sel.deliveryFee || 125);
+                if(this.paymentMode === 'cod') ship += parseInt(this.sel.handlingFee || 0);
+                const profUnit = parseInt(document.getElementById('input-profit').value) || 0;
+                const totalAmount = (parseInt(this.sel.price) * this.qty) + ship + (profUnit * this.qty);
+                try {
+                    const orderData = {
+                        buyerId: uid, productName: this.sel.name, qty: this.qty,
+                        wholesale: this.sel.price, profit: (profUnit * this.qty), total: totalAmount,
+                        customerName: n, customerPhone: '+92'+ph, businessName: biz, address: ad, 
+                        status: this.paymentMode==='advance'?"Pending Verification":"Pending", 
+                        paymentMode: this.paymentMode, timestamp: Date.now()
+                    };
+                    if(this.paymentMode==='advance') { orderData.tid = document.getElementById('pay-tid').value; orderData.proof = this.tempProofImg; }
+                    await db.ref('orders').push(orderData);
+                    this.toast("Order Placed!", "success");
+                    this.closeOverlays();
+                    switchView('orders');
+                } catch(e) { this.toast("Order Failed", "error"); }
+            },
+
+            slide(dir) {
+                const total = this.sel.images.length; this.currSlide += dir;
+                if(this.currSlide < 0) this.currSlide = 0; if(this.currSlide >= total) this.currSlide = total - 1;
+                const s = document.getElementById('det-slider'); s.scrollTo({ left: s.offsetWidth * this.currSlide, behavior: 'smooth' });
+            },
+
+            downloadImages() { this.toast("Downloading...", "success"); this.sel.images.forEach((img, i) => setTimeout(() => {const a = document.createElement('a'); a.href = img; a.download = `Alarix_${Date.now()}.jpg`; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);}, i * 500)); },
+            openEditProfile() { document.getElementById('edit-name').value = this.user.name; document.getElementById('edit-store').value = this.store?this.store.name:''; document.getElementById('edit-pic-prev').src = this.user.photo||''; this.tempProfilePic = this.user.photo; document.getElementById('overlay-profile-edit').classList.add('active'); history.pushState({overlay:true},""); },
+            saveProfile() { const n=document.getElementById('edit-name').value, c=document.getElementById('edit-city').value, s=document.getElementById('edit-store').value; const up={name:n,city:c}; if(this.tempProfilePic) up.photo=this.tempProfilePic; db.ref(`users/${uid}/profile`).update(up); if(s) db.ref(`users/${uid}/store`).set({name:s}); this.toast("Profile Updated", "success"); this.closeOverlays(); },
+            openSettings() { document.getElementById('overlay-settings').classList.add('active'); history.pushState({overlay:true},""); },
+            
+            updateUI() {
+                document.getElementById('u-name').innerHTML = `${this.user.name} ${this.user.isVerified ? '<i data-lucide="badge-check" class="w-4 h-4 text-blue-500 fill-white inline"></i>' : ''}`; 
+                document.getElementById('u-city').innerText = this.user.city; 
+                document.getElementById('u-pic').src = this.user.photo||''; 
+                document.getElementById('cart-badge').innerText = this.cart.length;
+                document.getElementById('verify-section').style.display = this.user.isVerified ? 'none' : 'block';
+                const hub = document.getElementById('seller-hub');
+                if(this.store) {
+                    hub.innerHTML = `
+                    <div class="bg-slate-900 text-white p-7 rounded-[32px] shadow-2xl shadow-slate-200 animate-fade-in">
+                        <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">My Business</p>
+                        <h3 class="text-2xl font-black mb-6 animate-pulse">${this.store.name}</h3>
+                        <div class="flex gap-2">
+                           <button onclick="switchView('post')" class="flex-1 bg-white text-black py-4 rounded-2xl font-bold text-xs hover:bg-slate-200 transition">Add Catalog</button>
+                           <button onclick="app.openSettings()" class="bg-slate-800 p-4 rounded-2xl hover:bg-slate-700 transition"><i data-lucide="settings" class="w-4 h-4 text-white"></i></button>
+                        </div>
+                    </div>`;
+                } else { hub.innerHTML = `<button onclick="app.createStore()" class="btn-primary shadow-lg shadow-emerald-200 animate-bounce">Become a Reseller</button>`; }
+                document.getElementById('list-cart').innerHTML = this.cart.map(i => {
+                    const img = (i.images && i.images.length > 0) ? i.images[0] : 'https://i.ibb.co/51y1Wq2/placeholder.png';
+                    return `<div class="flex gap-4 bg-slate-50 p-4 rounded-2xl items-center border"><div class="flex-1 flex gap-4 items-center cursor-pointer" onclick="app.openDetail('${i.id}')"><img src="${img}" class="w-16 h-16 object-contain rounded-xl bg-white"><div><h4 class="text-xs font-bold truncate text-slate-700">${i.name}</h4><p class="text-sm font-black markaz-green">Rs. ${i.price}</p></div></div><i data-lucide="trash-2" class="w-5 h-5 text-red-400 cursor-pointer p-1" onclick="app.delCart('${i.cartId}')"></i></div>`;
+                }).join('');
+                document.getElementById('grid-favs').innerHTML = this.favs.map(p => {
+                     const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://i.ibb.co/51y1Wq2/placeholder.png';
+                     return `<div class="bg-white border rounded-[24px] overflow-hidden" onclick="app.openDetail('${p.id}')"><img src="${img}" class="h-32 w-full object-contain p-2"><div class="p-2"><h3 class="text-[10px] font-bold truncate">${p.name}</h3></div></div>`;
+                }).join('');
+                lucide.createIcons();
+            },
+
+            triggerSlot(i) { this.currentSlotIdx = i; document.getElementById('slot-input').click(); },
+            async handleSlotUpload(input) {
+                const file = input.files[0]; if(!file) return;
+                const s = document.getElementById(`slot-${this.currentSlotIdx}`); s.innerHTML = `<div class="slot-loader"><div class="loader"></div></div>`;
+                const fd = new FormData(); fd.append('image', file); fd.append('key', IMGBB_API_KEY);
+                try { const r = await fetch('https://api.imgbb.com/1/upload', {method:'POST',body:fd}); const d = await r.json(); if(d.success) { this.uploadSlots[this.currentSlotIdx] = d.data.url; s.innerHTML = `<img src="${d.data.url}">`; s.classList.add('active'); this.toast("Image uploaded!", "success"); } } catch(e) { s.innerHTML='<i data-lucide="plus" class="text-slate-300"></i>'; this.toast("Failed", "error"); lucide.createIcons(); }
+            },
+            toggleColorSection(show) { const p = document.getElementById('color-palette'); p.classList.toggle('hidden', !show); document.getElementById('btn-col-yes').className = `px-3 py-1 text-xs font-bold rounded-lg border transition ${show?'bg-slate-800 text-white':'bg-white'}`; document.getElementById('btn-col-no').className = `px-3 py-1 text-xs font-bold rounded-lg border transition ${!show?'bg-slate-800 text-white':'bg-white'}`; if(!show) { this.selectedColors=[]; document.querySelectorAll('.color-option').forEach(e=>e.classList.remove('selected')); } },
+            toggleColorSelection(c, el) { if(this.selectedColors.includes(c)) { this.selectedColors = this.selectedColors.filter(x=>x!==c); el.classList.remove('selected'); } else { this.selectedColors.push(c); el.classList.add('selected'); } },
+            publish() {
+                const n=document.getElementById('post-name').value, p=document.getElementById('post-price').value, c=document.getElementById('post-cat').value, l=document.getElementById('post-loc').value, d=document.getElementById('post-desc').value;
+                const imgs = this.uploadSlots.filter(x=>x);
+                if(!n||!p||!c||!l||imgs.length===0) return this.toast("Missing info/images", "error");
+                document.getElementById('btn-publish').disabled=true;
+                db.ref('products').push({ 
+                    id: db.ref().push().key, name:n, price:p, category:c, location:l, desc:d, 
+                    deliveryFee:document.getElementById('post-delivery').value||125, handlingFee:document.getElementById('post-handling').value||0, 
+                    images:imgs, sellerId:uid, sellerName:this.store?.name||'Reseller', sellerPhoto: this.user.photo || '', 
+                    isSellerVerified: this.user.isVerified || false, colors:this.selectedColors, timestamp:firebase.database.ServerValue.TIMESTAMP 
+                }).then(()=>{ this.toast("Published!", "success"); this.resetForm(); switchView('home'); });
+            },
+            resetForm() { document.getElementById('post-name').value=''; document.getElementById('post-price').value=''; document.getElementById('post-desc').value=''; this.uploadSlots=[null,null,null,null,null]; for(let i=0;i<5;i++) { document.getElementById(`slot-${i}`).innerHTML='<i data-lucide="plus" class="text-slate-300"></i>'; document.getElementById(`slot-${i}`).classList.remove('active'); } this.toggleColorSection(false); lucide.createIcons(); document.getElementById('btn-publish').disabled=false; },
+            createStore() { const s = prompt("Enter Business/Shop Name:"); if(s) db.ref(`users/${uid}/store`).set({ name: s }); },
+            delCart(id) { db.ref(`users/${uid}/cart/${id}`).remove(); },
+            renderOrders(list) { document.getElementById('stat-profit').innerText = 'Rs. ' + list.filter(o=>o.status!=='Cancelled').reduce((a,b)=>a+(b.profit||0),0); document.getElementById('stat-orders').innerText = list.length; document.getElementById('list-orders').innerHTML = list.map(o=>`<div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 animate-fade-in"><div class="flex justify-between mb-2 font-bold text-xs text-slate-700"><span>${o.productName} (x${o.qty})</span><span class="text-emerald-500">${o.status}</span></div><div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase"><span>Total: Rs. ${o.total}</span><span>Profit: Rs. ${o.profit}</span></div><div class="mt-2 text-[10px] font-bold text-slate-300">Method: ${o.paymentMode==='advance'?'Pre-Paid':'COD'}</div></div>`).join(''); },
+            renderCats() { document.getElementById('list-cats').innerHTML = this.cats.map(c=>`<div class="cat-btn ${c==='All'?'active':''}" onclick="app.filterCat('${c}', this)">${c}</div>`).join(''); },
+            filterCat(c, el) { document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); const f=c==='All'?this.prods:this.prods.filter(p=>p.category===c); 
+            document.getElementById('grid-cats').innerHTML = `<div class="grid grid-cols-2 gap-3 animate-fade-in">${f.map(p=>{const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://i.ibb.co/51y1Wq2/placeholder.png'; return `<div class="bg-white border rounded-[20px] overflow-hidden" onclick="app.openDetail('${p.id}')"><div class="relative"><img src="${img}" class="h-28 w-full object-contain p-2"><div class="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] px-1 rounded font-bold">${p.location}</div></div><div class="p-2"><h4 class="text-[10px] font-bold truncate">${p.name}</h4><p class="text-xs font-black markaz-green">Rs. ${p.price}</p></div></div>`}).join('')}</div>`; },
+            search(q) { this.renderHome(this.prods.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.category.toLowerCase().includes(q.toLowerCase()))); },
+            share() { const l=window.location.origin+window.location.pathname+"?pid="+this.sel.id; navigator.share?navigator.share({title:this.sel.name,url:l}):this.copyToClip(l); },
+            updateQty(v) { this.qty = Math.max(1, this.qty + v); document.getElementById('det-qty').innerText = this.qty; },
+            closeOverlays(pop=false) { document.querySelectorAll('.app-overlay').forEach(o=>o.classList.remove('active')); if(!pop && window.history.state?.overlay) history.back(); }
+        };
+
+        function switchView(v) { ['home','category','profile','cart','orders','favs','post'].forEach(id=>{ document.getElementById('view-'+id).classList.add('hidden-view'); }); document.getElementById('view-'+v).classList.remove('hidden-view'); document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active')); document.getElementById(v==='category'||v==='profile'?'nav-'+v:'nav-home').classList.add('active'); window.scrollTo(0,0); lucide.createIcons(); }
+        app.init();
+    </script>
+</body>
+</html>
